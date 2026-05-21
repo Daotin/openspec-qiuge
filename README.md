@@ -124,3 +124,9 @@ openspec schema validate superpowers-openspec
 - schema 改动后运行 `openspec schema validate superpowers-openspec`
 - 日志沉淀流程改动后同步检查 `superpowers-openspec/templates/log-entry.md`
 - 小需求继续使用直接 Agent、Superpowers only 或 OpenSpec only
+
+
+# 参考
+
+- https://juejin.cn/post/7630755707556118562
+- https://github.com/JiangWay/openspec-schemas
