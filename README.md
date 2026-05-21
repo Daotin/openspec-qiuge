@@ -56,6 +56,43 @@ schema
 
 schema 只负责记录日志，`log-promotion` 由用户单独触发。
 
+使用方式：在目标项目里，把本仓库的 `log-promotion.md` 作为流程说明发给 AI，或直接使用下面这段合并提示词。
+
+```text
+请执行 log-promotion。
+
+流程说明：
+/path/to/openspec-qiuge/log-promotion.md
+
+输入日志：
+docs/logs/YYYYMMDD.md
+
+要求：
+1. 读取日志中所有未 promoted 的 user-feedback / ai-correction / workflow-deviation 条目
+2. 判断每条是否具备可复用价值
+3. 按 Promotion Target 更新 CLAUDE.md、openspec/config.yaml、README.md 或 schema
+4. 只更新日志明确指向的目标文件，不做无关重构
+5. 在原日志条目末尾追加 Promotion Result
+6. 最后输出本次沉淀了哪些规则、跳过了哪些条目
+```
+
+`YYYYMMDD` 替换为要处理的日期，例如：
+
+```text
+docs/logs/20260521.md
+```
+
+处理完成后，日志条目应追加：
+
+```markdown
+### Promotion Result
+
+- Status: promoted | skipped
+- Updated: <CLAUDE.md / openspec/config.yaml / README.md / schema / none>
+- Reason: <why>
+- Date: YYYY-MM-DD
+```
+
 ## 安装 schema
 
 在目标项目根目录执行：
