@@ -68,7 +68,7 @@ schema 只负责记录日志，`log-promotion` 由用户单独触发。
 docs/logs/YYYYMMDD.md
 
 要求：
-1. 读取日志中所有未 promoted 的 user-feedback / ai-correction / workflow-deviation 条目
+1. 读取日志中所有不包含 `### Promotion Result` 的 user-feedback / ai-correction / workflow-deviation 条目
 2. 判断每条是否具备可复用价值
 3. 按 Promotion Target 更新 CLAUDE.md、openspec/config.yaml、README.md 或 schema
 4. 只更新日志明确指向的目标文件，不做无关重构
@@ -92,6 +92,8 @@ docs/logs/20260521.md
 - Reason: <why>
 - Date: YYYY-MM-DD
 ```
+
+已有 `### Promotion Result` 的日志条目视为已处理，后续运行时直接跳过。
 
 ## 安装 schema
 

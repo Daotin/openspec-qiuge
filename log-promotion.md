@@ -26,6 +26,8 @@ docs/logs/YYYYMMDD.md
 
 优先处理 `Promotion Target` 中未完成的目标。
 
+已包含 `### Promotion Result` 的日志条目视为已处理，直接跳过，不重复判断、不重复写入目标文件。
+
 ## 输出目标
 
 按日志条目的 `Promotion Target` 更新对应文件：
@@ -41,7 +43,7 @@ docs/logs/YYYYMMDD.md
 ## 执行步骤
 
 1. 读取指定日志文件。
-2. 找出包含 `Promotion Target` 且尚未标记 promoted 的条目。
+2. 找出包含 `Promotion Target` 且不包含 `### Promotion Result` 的条目。
 3. 对每条日志判断是否具备可复用价值。
 4. 将规则写入对应目标文件。
 5. 回写日志条目，记录 promotion 结果。
@@ -84,7 +86,7 @@ docs/logs/YYYYMMDD.md
 - 不自动格式化无关文件。
 - 写入规则要简短、可执行、带触发条件。
 - 多条日志指向同一规则时合并成一条规则。
-- 已沉淀的日志条目不重复处理。
+- 已包含 `### Promotion Result` 的日志条目不重复处理。
 
 ## 推荐提示词
 
@@ -95,7 +97,7 @@ docs/logs/YYYYMMDD.md
 docs/logs/YYYYMMDD.md
 
 要求：
-1. 读取所有未 promoted 的 user-feedback / ai-correction / workflow-deviation 条目
+1. 读取所有不包含 `### Promotion Result` 的 user-feedback / ai-correction / workflow-deviation 条目
 2. 判断是否有可复用价值
 3. 按 Promotion Target 更新对应文件
 4. 在日志条目末尾追加 Promotion Result
