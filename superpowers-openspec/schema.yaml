@@ -1,0 +1,209 @@
+name: superpowers-openspec
+version: 1
+description: >
+  OpenSpec 与 Superpowers 的强流程 schema。OpenSpec 负责 proposal、
+  specs、tasks、verify、archive；Superpowers 负责 design 澄清、plan 拆解
+  和可选的 subagent 执行。适用于复杂需求；小需求请使用更轻量流程。
+  流程为 design → proposal → specs → tasks → plan → apply → verify → archive。
+  阶段推进只能由用户显式调用 /opsx:continue、/opsx:apply、
+  /opsx:verify 或 /opsx:archive 触发。普通对话反馈只修正当前阶段产物，
+  不自动进入下一阶段。
+
+artifacts:
+  - id: design
+    generates: design.md
+    description: 使用 Superpowers brainstorming 澄清需求后的完整设计素材
+    template: design.md
+    instruction: |
+      使用 superpowers:brainstorming 澄清需求。
+
+      输出要求：
+      - 将用户确认后的最终设计直接写入当前 change 的 design.md。
+      - 不生成 brainstorm.md。
+      - 不写入 docs/superpowers/specs/。
+      - design.md 不强制固定格式，但必须完整覆盖需求背景、目标、范围、非范围、用户确认后的方案、关键约束、影响面、验收标准和未决问题。
+      - 未决问题没有则写“无”。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md；文件不存在时创建目录和文件。
+      若无，不写日志。
+      继续下一阶段前，若上一阶段用户反馈尚未写入日志，先补写。
+
+      STAGE GATE：
+      生成或修改 design.md 后停止，等待用户反馈或再次显式调用 /opsx:continue。
+      若用户继续口语反馈 design.md，只修改 design.md，不生成 proposal.md。
+    requires: []
+
+  - id: proposal
+    generates: proposal.md
+    description: 基于 design.md 生成 OpenSpec 变更提案
+    template: proposal.md
+    instruction: |
+      基于 design.md 创建 proposal.md。
+
+      要求：
+      - 只提炼变更目标、范围、能力和影响面。
+      - 不重复 design.md 的实现细节。
+      - Capabilities 必须列出新增或修改的能力，并使用 kebab-case。
+      - 新增能力后续对应 specs/<capability>/spec.md。
+      - 修改能力必须先检查 openspec/specs/ 下是否已有对应 capability。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md。
+      若无，不写日志。
+
+      STAGE GATE：
+      生成或修改 proposal.md 后停止，等待用户反馈或再次显式调用 /opsx:continue。
+      若用户继续口语反馈 proposal.md，只修改 proposal.md，不生成 specs。
+    requires:
+      - design
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: 基于 proposal.md 和 design.md 生成 OpenSpec delta specs
+    template: spec.md
+    instruction: |
+      基于 proposal.md 的 Capabilities 和 design.md 创建 delta specs。
+
+      要求：
+      - 每个 capability 一个 specs/<capability>/spec.md。
+      - Requirement 使用 MUST 或 SHALL。
+      - 每个 Requirement 至少包含一个 #### Scenario。
+      - Scenario 必须使用四级标题 #### Scenario: <name>。
+      - ADDED、MODIFIED、REMOVED、RENAMED 按实际需要使用。
+      - MODIFIED 必须写出修改后的完整 Requirement 内容。
+      - REMOVED 必须包含 Reason 和 Migration。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md。
+      若无，不写日志。
+
+      STAGE GATE：
+      生成或修改 specs 后停止，等待用户反馈或再次显式调用 /opsx:continue。
+      若用户继续口语反馈 specs，只修改 specs，不生成 tasks.md。
+    requires:
+      - proposal
+      - design
+
+  - id: tasks
+    generates: tasks.md
+    description: 粗粒度交付清单
+    template: tasks.md
+    instruction: |
+      基于 specs 和 design.md 创建 tasks.md。
+
+      要求：
+      - tasks.md 只保留交付级 checklist。
+      - 每个任务必须使用 - [ ] 复选框。
+      - 不展开到文件级微步骤。
+      - 任务顺序按依赖关系排列。
+      - 每个任务都应能对应到至少一个 Requirement 或验证目标。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md。
+      若无，不写日志。
+
+      STAGE GATE：
+      生成或修改 tasks.md 后停止，等待用户反馈或再次显式调用 /opsx:continue。
+      若用户继续口语反馈 tasks.md，只修改 tasks.md，不生成 plan.md。
+    requires:
+      - specs
+      - design
+
+  - id: plan
+    generates: plan.md
+    description: 使用 Superpowers writing-plans 生成详细执行计划
+    template: plan.md
+    instruction: |
+      使用 superpowers:writing-plans 创建 plan.md。
+
+      输入文件：
+      - design.md
+      - proposal.md
+      - specs/**/*.md
+      - tasks.md
+
+      生成计划前，先让用户选择 Execution Mode：
+      - main-agent：当前 Agent 按 plan.md 线性执行。
+      - subagent-driven-development：使用 superpowers:subagent-driven-development，强制 TDD 和 code review。
+
+      要求：
+      - plan.md 必须写入用户选择的 Execution Mode。
+      - plan.md 按 tasks.md 分组。
+      - 每个 task 拆成可执行步骤。
+      - 每个 task 必须包含验证命令和预期结果。
+      - 不写入 docs/superpowers/plans/。
+      - 不要求创建 git commit。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md。
+      若无，不写日志。
+
+      STAGE GATE：
+      生成或修改 plan.md 后停止，等待用户反馈或显式调用 /opsx:apply。
+      若用户继续口语反馈 plan.md，只修改 plan.md，不执行实现。
+    requires:
+      - tasks
+
+  - id: verify
+    generates: verify.md
+    description: 实现后验证报告
+    template: verify.md
+    instruction: |
+      verify.md 必须在 apply 完成后生成。
+
+      验证项：
+      - 运行 openspec validate --all --json，并记录结果。
+      - 确认 tasks.md 的任务完成状态。
+      - 对照 specs/**/*.md，检查每个 Requirement 和 Scenario 是否有实现或测试覆盖。
+      - 对照 design.md，检查关键约束和验收标准是否落实。
+      - 记录实际运行的测试、构建或检查命令及结果。
+      - 给出是否可以 archive 的结论。
+
+      不检查：
+      - git commit 状态
+      - worktree 状态
+      - PR 状态
+      - docs/superpowers 泄漏
+
+      若验证失败，回到 apply 修复后重新生成 verify.md。
+
+      LOG CHECKPOINT：
+      本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+      若有，append 到 docs/logs/YYYYMMDD.md。
+      若无，不写日志。
+    requires:
+      - plan
+
+apply:
+  requires: [plan]
+  tracks: tasks.md
+  instruction: |
+    apply 只负责实现，不创建 worktree，不执行 archive，不生成 retrospective。
+
+    执行前读取 plan.md 的 Execution Mode。
+
+    main-agent：
+    - 当前 Agent 按 plan.md 执行。
+    - 每完成一个 task，运行该 task 对应验证命令。
+    - 验证通过后同步勾选 tasks.md。
+    - 所有任务完成后停止，等待 /opsx:verify。
+
+    subagent-driven-development：
+    - 使用 superpowers:subagent-driven-development 执行 plan.md。
+    - 强制 TDD。
+    - 强制 code review。
+    - 每完成一个 task，同步勾选 tasks.md。
+    - 所有任务完成后停止，等待 /opsx:verify。
+
+    若 plan.md 没有 Execution Mode，先停止并让用户选择，然后更新 plan.md。
+
+    LOG CHECKPOINT：
+    本阶段结束前判断是否出现 user-feedback、ai-correction、workflow-deviation。
+    若有，append 到 docs/logs/YYYYMMDD.md。
+    若无，不写日志。
